@@ -17,6 +17,8 @@ The assignments are then cleaned with the purge_clusters.py script, and the prop
 Finally, these representations can be used, in conjunction with others, to train a LASSO classifier with the classification_LASSO.py script.
 The theoric pipeline and the computing pipeline can be seen in the figures above.
 
+![MetagenBERT-Glob: The Global Clustering Architecture.Panel (a). For each metagenome, all reads are embedded through the use of a gLLM. A subsample of each embedded metagenome is used to train a K-means common to all the selected dataset. The centroids of the clusters obtained through K-means are retrieved, effectively partitioning the latent space. Panel (b). Every read embedding of each sample is then assigned to its cluster by nearest neighbor search against the centroids, thus creating a new abundance vector based on embeddings rather than species used for classification.](MetagenBERT_pipeline.pdf)
+
 ## Dependencies
 
 The following packages are required to use MetagenBERT : 
