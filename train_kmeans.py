@@ -98,7 +98,7 @@ def train_kmeans_faiss_multi_gpu(data, save_path, n_clusters_list, n_iter=20, ve
         gpu_index = faiss.index_gpu_to_cpu(gpu_index)
         # Save the CPU index
         print("Saving index to ",os.path.join(save_path,'index_'+str(n_clusters)+'.faiss'))
-        faiss.write_index(gpu_index, "index_"+str(n_clusters)+".faiss")
+        faiss.write_index(gpu_index, os.path.join(save_path,'index_'+str(n_clusters)+'.faiss'))
         gpu_index.reset()  # Clear the GPU index to free memory
 
 

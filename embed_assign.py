@@ -68,16 +68,10 @@ def embed_assign(rank, model_path,sequence_dir,max_length,saving_path,batch_size
     if rank == 0:
         L_files = os.listdir(sequence_dir)
         L_files.sort()
-        assign_saving_path = os.path.join(saving_path,"assignments")
-        idx_saving_path = os.path.join(saving_path,"idx")
-        os.makedirs(assign_saving_path, exist_ok=True)
-        os.makedirs(idx_saving_path, exist_ok=True)
-        for f in os.listdir(sequence_dir):
-            os.makedirs(os.path.join(idx_saving_path,f), exist_ok=True)
         for centroid_path in centroids_paths.strip("[]").split(","):
-            os.makedirs(os.path.join(assign_saving_path,centroid_path.split("/")[-1].split(".")[0]), exist_ok=True)
+            os.makedirs(os.path.join(saving_path,centroid_path.split("/")[-1].split(".")[0]), exist_ok=True)
             for f in L_files:
-                os.makedirs(os.path.join(saving_path,"assignments",centroid_path.split("/")[-1].split(".")[0],f.split("/")[-1].split(".")[0]), exist_ok=True)
+                os.makedirs(os.path.join(saving_path,centroid_path.split("/")[-1].split(".")[0],f.split("/")[-1].split(".")[0]), exist_ok=True)
     gpu = torch.device("cuda")
 
     ## Load model and tokenizer
@@ -109,9 +103,8 @@ def embed_assign(rank, model_path,sequence_dir,max_length,saving_path,batch_size
 
     faiss_indexes = load_faiss_indexes(centroids_paths, gpu_id=rank)
     for sequence_file in L_files:
-        print("Starting assignment of sample "+sequence_file.split("/")[-1].split(".")[0]+"on GPU "+str(torch.cuda.get_device_name(gpu_id)))
+        print("Starting assignment of sample "+sequence_file.split("/")[-1].split(".")[0]+" on GPU "+torch.cuda.get_device_name(gpu))
         sequence_file = os.path.join(sequence_dir, sequence_file)
-        idx_file_saving_path = os.path.join(saving_path,"idx",sequence_file.split("/")[-1].split(".")[0])
         batch_index=0
         # Define datasets
         dataset = SentenceDataset(sequence_file, tokenizer, max_length)
@@ -134,15 +127,15 @@ def embed_assign(rank, model_path,sequence_dir,max_length,saving_path,batch_size
                 batch_embeddings = model(**gpu_batch)[0]
                 for centroid_path, faiss_index in faiss_indexes.items():  
                     _, assignments = faiss_index.search(torch.mean(batch_embeddings,dim=1).cpu().numpy().astype("float32"), 1)
-                    np.save(os.path.join(saving_path,"assignments",centroid_path.split("/")[-1].split(".")[0],sequence_file.split("/")[-1].split(".")[0],"assignments_"+str(batch_index)+"_"+str(rank)+".npy"), assignments)
-                # Save assignments and indexes
-                np.save(os.path.join(idx_file_saving_path,"idx_"+str(batch_index)+"_"+str(rank)+".npy"), batch["idx"].cpu().numpy())
+                    np.save(os.path.join(saving_path,centroid_path.split("/")[-1].split(".")[0],sequence_file.split("/")[-1].split(".")[0],"assignments_"+str(batch_index)+"_"+str(rank)+".npy"), assignments)
+                    np.save(os.path.join(saving_path,centroid_path.split("/")[-1].split(".")[0],sequence_file.split("/")[-1].split(".")[0],"idx_"+str(batch_index)+"_"+str(rank)+".npy"), gpu_batch['idx'].cpu().numpy())
                 ## In case of GPU memory overloading, activate garbage collect
                 #del gpu_batch
                 #del batch_embeddings
                 #torch.cuda.empty_cache()
                 #gc.collect()
                 batch_index+=1
+        print("Finished assignment of sample "+sequence_file.split("/")[-1].split(".")[0]+" on GPU "+torch.cuda.get_device_name(gpu))
 
 def main(args):
     world_size = args.world_size
