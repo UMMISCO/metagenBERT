@@ -25,12 +25,11 @@ The theoric pipeline and the computing pipeline can be seen in the figures above
 ## Dependencies
 
 The following packages are required to use MetagenBERT : 
-torch
-numpy
-scikit-learn
-scikit-bio
-xgboost
-faiss-gpu
+torch,
+numpy,
+scikit-learn,
+scikit-bio,
+faiss-gpu,
 transformers
 
 ## Script Usage
