@@ -1,21 +1,16 @@
-TEST AGAIN
-ADD AN OPTION TO CLASSIFY WITH LASSO
-REVIEW CHATGPT
-ADD CITATION TO MY ARTICLE AND REF
-
 # MetagenBERT README
 
 ## Introduction
 
 MetagenBERT is a Transformer-based tool for disease prediction from metagenomic data. This model is designed to produce metagenomic samples representations directly from raw shotgun sequencing reads, proposing to describe a metagenome independantly from outside reference databases or taxonomic annotations. This method is adapted to short reads samples.
-MetagenBERT creates a representation of a sample by relying on Transformer models such as DNABERT-2 (ref) to produce embeddings of DNA reads. Then, it represents the sample by assigning each read to clusters, producing a new representation based on the proportion of reads assigned to each cluster. The method is detailed in ref.
+MetagenBERT creates a representation of a sample by relying on Transformer models such as DNABERT-2 [1] to produce embeddings of DNA reads. Then, it represents the sample by assigning each read to clusters, producing a new representation based on the proportion of reads assigned to each cluster. The method is detailed in [2].
 
 ## Pipeline
 
 The metagenome representation is obtained through different steps : 
 First, the reads from each samples are embedded by a genomic LLM (originally DNABERT-2 or DNABERT-MS). This step is particularly expensive in computation time and shall be executed using GPUs. To mitigate the cost, experiments have proven that using 5 to 10% of the reads from each sample does not negatively affect the results. This step can be performed with embedding.py script.
 On the other hand, a clustering algorithm such as K-Means must be trained in order to produce the representation. It is obtained through clustering of DNA read embeddings. The centroids of the clusters are retrieved and will be used as a partition of the high dimensional embedding space. 
-The user can either train his own K-means from his data, or use the MetaCardis model we proposed (trained on ref technology data). Training such a model can be done using the train_kmeans.py script.
+The user can either train his own K-means from his data, or use the MetaCardis [3] model we proposed. Training such a model can be done using the train_kmeans.py script.
 After this step, the user can assign the reads from each studied samples to their closest cluster by using the assign_to_kmeans.py script.
 Noteworthy, if the user already has K-means centroids, the embed_assign.py allows them to embed the reads and directly assign them to their corresponding cluster while discarding the embedding itself, which can prove very heavy in storage. The authors recommend this method if possible.
 The assignments are then cleaned with the purge_clusters.py script, and the proportion of reads assigned to each cluster, or abundance, is obtained with the compute_abundance.py script.
@@ -30,7 +25,7 @@ numpy,
 scikit-learn,
 scikit-bio,
 faiss-gpu,
-transformers
+transformers,
 
 ## Script Usage
 
@@ -61,11 +56,11 @@ The "idx" directory follows the same structure, with files named "idx_X_Y.pt". T
 
 - batch_size : the number of sequences treated at once by each GPU. From our experience, using DNABERT-2, A100 GPUs could be used with a batch size of 35.000 - 40.000 sequences
 
-- world_size : the number of processes (and therefore GPUs) the program will have access to. This script was only tested on a single node. The authors adapted a version usable on French supercalculator Jean-Zay (ref) in a multi-node configuration. This requires the use of the package idr_torch and is not adapted to most configurations. This script can be demanded to the authors.
+- world_size : the number of processes (and therefore GPUs) the program will have access to. This script was only tested on a single node. The authors adapted a version usable on French supercalculator Jean-Zay [4] in a multi-node configuration. This requires the use of the package idr_torch and is not adapted to most configurations. This script can be demanded to the authors.
 
 ### train_kmeans.py
 
-This script uses a dataset of embedding directories as obtained from the usage of embedding.py and loads a small number of reads from each sample. It then uses FAISS (ref) package to perform K-Means clustering with GPU acceleration.
+This script uses a dataset of embedding directories as obtained from the usage of embedding.py and loads a small number of reads from each sample. It then uses FAISS [5] package to perform K-Means clustering with GPU acceleration.
 
 usage:
 python train_kmeans.py data_path save_path n_clusters_list n_iter verbose min_points max_points n_to_load
@@ -88,7 +83,7 @@ python train_kmeans.py data_path save_path n_clusters_list n_iter verbose min_po
 
 ### assign_to_kmeans.py
 
-This script uses a dataset of embedding directories as obtained from the usage of embedding.py and loads all their reads by batch, then assigns them to centroids using FAISS (ref) package with GPU acceleration.
+This script uses a dataset of embedding directories as obtained from the usage of embedding.py and loads all their reads by batch, then assigns them to centroids using FAISS [4] package with GPU acceleration.
 
 usage :
 python assign_to_kmeans.py save_path data_path idx_path centroid_path_list nb_batch
@@ -130,7 +125,7 @@ The "idx" directory follows the same structure, with files named "idx_X_Y.pt". T
 
 - batch_size : the number of sequences treated at once by each GPU. From our experience, using DNABERT-2, A100 GPUs could be used with a batch size of 35.000 - 40.000 sequences
 
-- world_size : the number of processes (and therefore GPUs) the program will have access to. This script was only tested on a single node. The authors adapted a version usable on French supercalculator Jean-Zay (ref) in a multi-node configuration. This requires the use of the package idr_torch and is not adapted to most configurations. This script can be demanded to the authors
+- world_size : the number of processes (and therefore GPUs) the program will have access to. This script was only tested on a single node. The authors adapted a version usable on French supercalculator Jean-Zay [5] in a multi-node configuration. This requires the use of the package idr_torch and is not adapted to most configurations. This script can be demanded to the authors
 
 - centroids_paths : to allow the user to perform assignment with various centroids files and compare the results in one step without needing to load the data anew, this parameter takes as input a string that will be parsed to a list. Please write the list of paths to centroids npy files exactly under the form ["/absolute/path/to/centr16/centroids_16.npy","/absolute/path/to/centr32/centroids_32.npy","/absolute/path/to/centr64/centroids_64.npy"] without spaces or additional characters. You can use a list of one element. Keep in mind the name of your centroid file stripped of ".npy" will be used as directory name to save the results. You can use any numpy array of dimensions (number_of_centroids, number_of_features). Make sure the number of features correspond to the number of features of your embeddings.
 
@@ -171,4 +166,14 @@ python classification_LASSO.py --metagenbert_path  /path/to/dataset --corresp /p
 
 - --additional_paths : paths to files containing additional compositional information to add, for example to compare performances with MetagenBERT embedding and the combination of MetagenBERT and species based embeddings. To allow the user to add several sources of information, this parameter takes as input a string that will be parsed to a list. Please write the list of paths to data exactly under the form ["/absolute/path/to/data1.csv","/absolute/path/to/data2.csv"] without spaces or additional characters. You can use a list of one element. Data should be in csv of 2 columns with sample ids as left element and abundance (between 0 and 1, not percentage) as right element.
 
-- --ilr_transform : whether to apply ilr transform (ref) to eeach source of data independantly
+- --ilr_transform : whether to apply ilr transform to each source of data independantly
+
+[1] Zhihan Zhou, Yanrong Ji, Weijian Li, Pratik Dutta, Ramana V Davuluri, and Han Liu. DNABERT-2: Efficient foundation model and benchmark for multi-species genomes. The Twelfth International Conference on Learning Representations, 2024.
+
+[2] Gaspar Roy, Eugeni Belda, Baptiste Hennecart, Yann Chevaleyre, Edi Prifti, Jean-Daniel Zucker. MetagenBERT: a Transformer-based Architecture using Foundational genomic Large Language Models for novel Metagenome Representation. arXiv. 2026.
+
+[3] S.K Forslund, R. Chakaroun, M. Zimmermann-Kogadeeva, et al}. Combinatorial, additive and dose-dependent drug–microbiome associations}. Nature}. 2021. 10.1038/s41586-021-04177-9.
+
+[4] Matthijs Douze, Alexandr Guzhva, Chengqi Deng, Jeff Johnson, Gergely Szilvasy, Pierre-Emmanuel Mazaré, Maria Lomeli, Lucas Hosseini, Hervé Jégou. The Faiss library. arXiv. 2024.
+
+[5] http://www.idris.fr/jean-zay/jean-zay-presentation.html
