@@ -3,7 +3,7 @@
 ## Introduction
 
 MetagenBERT is a Transformer-based tool for disease prediction from metagenomic data. This model is designed to produce metagenomic samples representations directly from raw shotgun sequencing reads, proposing to describe a metagenome independantly from outside reference databases or taxonomic annotations. This method is adapted to short reads samples.
-MetagenBERT creates a representation of a sample by relying on Transformer models such as DNABERT-2 [1] to produce embeddings of DNA reads. Then, it represents the sample by assigning each read to clusters, producing a new representation based on the proportion of reads assigned to each cluster. The method is detailed in [2].
+MetagenBERT creates a representation of a sample by relying on Transformer models such as DNABERT-2 [1] to produce embeddings of DNA reads. Then, it represents the sample by assigning each read to clusters, producing a new representation based on the proportion of reads assigned to each cluster. The method is detailed in preprint [2].
 
 ## Pipeline
 
@@ -42,7 +42,7 @@ This script uses a LLM to produce embeddings of all the reads of all samples in 
 usage : 
 `python embedding.py model_path sequence_dir max_length saving_path batch_size world_size`
 
-- model path : the path to the transformer model used to produce the embeddings. Can be a local link or a link to a HuggingFace repository. The authors used DNABERT-2 and provide the local version in this repository (some minor corrections were applied, like disabling FlashAttention for compatibility issues)
+- model path : the path to the transformer model used to produce the embeddings. Can be a local link or a link to a HuggingFace repository. The authors used DNABERT-2 and provide the local version in this repository : https://huggingface.co/UMMISCO-IRD/DNABERT-2-revision (some minor corrections were applied, like disabling FlashAttention for compatibility issues). The authors also used dnabert-MS, a continuously pre-trained version of DNABERT-2 specialized on gut microbiome bacterial DNA and available here : https://huggingface.co/UMMISCO-IRD/DNABERT-MS.
 
 - sequence_dir : the path to a directory containing the txt files to embed. The authors strongly advise that one file should correspond to one metagenomic sample. we remind the user that the results show almost none to none performance loss when using only 5-10% of reads per samples, and advise them to directly use files containing only this proportion of reads from the original samples. For computational efficiency, the files should contain only DNA sequences. For example, the 5 first lines of a sample should look like this : 
 
